@@ -43,6 +43,7 @@ your Wiz light over the LAN.
 I got protocol and hardware information, and inspiration from the following:
 
 http://blog.dammitly.net/2019/10/cheap-hackable-wifi-light-bulbs-or-iot.html
+
 https://limitedresults.com/2019/02/pwn-the-wiz-connected/
 
 The OpenHab team, particularly...
@@ -53,6 +54,9 @@ https://www.wireshark.org/
 And of course, the Hubitat dev community! I read through a ton of everyone's source looking for and
 usually finding solutions to LAN device questions.  Especially useful were...
 https://github.com/robheyes/lifxcode
+
 https://github.com/muxa/hubitat/blob/master/drivers/wled-light.groovy
+
 https://github.com/markus-li/Hubitat/tree/master/drivers
+
 
