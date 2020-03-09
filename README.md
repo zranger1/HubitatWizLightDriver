@@ -1,29 +1,10 @@
-# HubitatWizLightDriver v0.01
-Hubitat Elevation device handler for Philips Wiz color lights
+# HubitatWizLightDriver v1.0
+Hubitat Elevation device handler for Philips Wiz wi-fi color lights
 
 ## What can I do with this driver?
 This driver lets the Hubitat control Wiz color bulbs.  It will probably
 mostly work with Wiz on/off and variable CT white bulbs as well, but I only own
 the color bulbs at this point and I haven't tested the others yet.
-
-## Notes for Beta Version (0.01)
-
-Important Limitations - You can only *control* the light with this driver. It can't yet read status from the bulb,
-so if somebody changes settings with the Wiz app, that will not be reflected in the driver's state. Due
-to the Hubitat's limited ability to listen for datagrams, this may not be possible without an external
-program (currently in progress).
-
-The Wiz protocol allows you to set current state via the LAN, with no cloud involved.  Setting persistent
-bulb configuration parameters requires you use the Wiz app and cloud.  The Wiz architecture 
-is highly cloud dependent. The bulbs phone home A LOT. If you disconnect from the Internet, the
-app gets very cranky and many features just stop working. 
-
-But with this driver, you can set up your bulbs, and ignore the cloud for day-to-day operation.
-
-I'm still working on breaking the app<->cloud protocol, and from some exploration of packet captures during setup,
-I think there may be more local controls to be discovered too. These bulbs are capable and inexpensive.  I'd
-welcome help figuring out all they can do.  
-
 
 ## To Use
 Install and provision your Wiz bulb using the phone app.  Note the bulb's IP address.

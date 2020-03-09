@@ -1,0 +1,71 @@
+                                                        
+Wiz Lighting Protocol Notes:
+   
+   To issue a command to the bulb, send a json packet to the bulb's command port (38899)
+   The bulb will immediately respond on the same port with a json packet confiming the command and
+   indicating success or failure.
+   
+   The key pieces of the command packet are the "method" section, and the "params" section. "Methods" are 
+   commands and "params" are arguments. Described below are the methods discovered thus far:
+   
+********************************************************************************************
+
+registration
+"register" with the bulb so that it will send you status updates on port 38900
+at about 1 per second for the next 20 seconds or so.
+  Example:
+    {"method": "registration", "id": 1, "params": {"phoneIp": "10.0.0.xxx", "register": true, "homeId": xxxxxx, "phoneMac": "macxxxxxx"}}
+
+pulse
+causes the light to "pulse" brightness by the specified amount over the specified number
+of milliseconds.
+  Example:
+    {"method": "pulse", "id": 22, "params": {"delta": -30, "duration": 900}}
+
+setPilot
+Set bulb parameters - color, color temperature, state, preset, etc.
+  Example:
+     To turn the bulb "on"
+     {"method": "setPilot", "id": 24, "params": {"state": 1}}
+         (see source code for lots of "setPilot" examples)
+         
+getPilot
+Get current bulb status  
+  Example:  
+   {"method": "getPilot", "id": 24, "params": {}}
+   
+  Typical returned status packet:
+   {"method":"getPilot","id":15,"env":"pro","result":{"mac":"macxxxxxx","rssi":-50,"src":"","state":true,"sceneId":0,
+      "r":29,"g":98,"b":179,"c":0,"w":0,"dimming":75}}
+        
+            
+To receive status heartbeat packets, issue a "registration" command via port 38899, and
+listen on port 38900.  After registering, the bulb will send you status updates for
+about the next 20 seconds.  To keep recieving updates, register again.
+
+The status packets are json-formatted and may contain the following items:
+
+    method     - method will be "syncPilot" for heartbeat packets
+    id         - packet sequence number.  Far as I can tell, any integer will work
+    mac        - The MAC address of the bulb
+    rssi       - The bulb's WiFi signal strength
+    src        - The "source" of a command, "udp" or "hb" <purpose unknown>
+    mqttCd     - boolean <purpose unknown>
+    state      - boolean on/off state of the bulb
+    sceneId    - integer identifier for lighting preset
+    play       - boolean <purpose unknown>
+    speed      - animation speed for dynamic presets
+    r          - (0-255) red channel
+    g          - (0-255) green channel
+    b          - (0-255) blue channel
+    c          - (0-255) cool white channel? <not yet tested>
+    w          - (0-266) warm white channel? <not yet tested>
+    temp       - color temperature
+    dimming    - (0-100) brightness channel 
+    schdPsetId - preset schedule?   <not tested>
+    fwVersion  - firmware version number
+    
+A typical syncPilot packet looks like this:
+{"method": "syncPilot", "id": 219, "env": "pro", "params":{ "mac": "bulbMac", "rssi": -72, "src": "hb", "mqttCd": 0, "state": true, "sceneId": 0, "temp": 3362, "dimming": 69, "schdPsetId": 5}}
+
+

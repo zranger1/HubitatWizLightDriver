@@ -11,6 +11,7 @@
  *    Date        Ver           Who       What
  *    ----        ---           ---       ----
  *    2020-1-12   0.1           JEM       Created
+ *    2020-3-08   1.0           JEM       Added status requester, update to 1.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -69,11 +70,10 @@ import groovy.transform.Field
     "Steampunk"
 ]
  
-def version() {"v0.01"}
+def version() {"v1.00"}
 def commandPort() { "38899" }
 def unknownString() { "none" }
-def statusPort()  { "38900" }  
-def statusPollInterval() { 15 }  // seconds
+def statusPort()  { "38899" }  
 
 metadata {
     definition (name: "Wiz Color Light", namespace: "jem", author: "JEM",importUrl: "") {
@@ -82,13 +82,14 @@ metadata {
         capability "LightEffects"
         capability "Switch"
         capability "SwitchLevel"
+        capability "Refresh"
         capability "ColorControl"
         capability "ColorTemperature"
         capability "ColorMode"     
         
         command    "pulse",[[name:"Delta*", type: "NUMBER",,description: "Change in intensity, positive or negative",constraints:[]],
                             [name:"Duration*", type: "NUMBER", description: "Duration in milliseconds", constraints:[]]]                           
-        command    "setEffectSpeed", [[name: "Effect speed*", type: "NUMBER", description: "(0 to 200)", constraints:[]]]        
+        command    "setEffectSpeed", [[name: "Effect speed*", type: "NUMBER", description: "(0 to 200)", constraints:[]]]     
         
         attribute  "effectNumber","number"
         attribute  "effectSpeed", "number" 
@@ -97,8 +98,7 @@ metadata {
 
 preferences {
     input("ip", "text", title: "IP Address", description: "IP address of Wiz light", required: true)
-//    input name: "remoteStateEnable", type: "bool", title: "Use remote status server", defaultValue: false
-//    input("ipRemote", "text", title: "Status Server IP Address", description: "IP address of status server")
+    input name: "pollingInterval", type: "number", title: "Polling interval (seconds)", defaultValue: 10
     input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: false        
 }
 
@@ -140,13 +140,12 @@ def initialize() {
     sendEvent([name: "level", value: 100])  
     sendEvent([name: "saturation", value: 100])      
   
-// TBD - enable remote listener support when the server is done.  
-//    if (remoteStateEnable) runIn(statusPollInterval, getCurrentState)     
+    runIn(pollingInterval, getCurrentStatus)     
 }
 
 def refresh() {
   logDebug("refresh")
-  initialize()
+  getCurrentStatus(false)
 }
 
 /**
@@ -169,38 +168,29 @@ def sendCommand(String cmd) {
   }      
 }
 
-// Wiz bulbs require applications to register for status updates, which
-// are then sent at about 5 second intervals for approximately the next
-// 20 seconds.  At that point, the app must re-register.  Awesome for
-// phones, but not so nice for Hubitat, which doesn't have a general
-// purpose UDP listener. For the time being, I have punted this
-// functionality to a python program which returns all that is
-// known about a light's status in response to a UDP request.  
-// 
-def getCurrentStatus() {
-
-  if (!remoteStateEnable) return
-  
+def getCurrentStatus(resched=true) {
   logDebug("getCurrentStatus")
   
-  def addr = ipRemote+":"+statusPort()
-  String cmd = JsonOutput.toJson(["lightIP":ip,"method":"status"])
+  def addr = ip+":"+commandPort()
+  String cmd = WizCommandBuilder("getPilot",15,[" "])
     
   pkt = new hubitat.device.HubAction(cmd,
                      hubitat.device.Protocol.LAN,
                      [type: hubitat.device.HubAction.Type.LAN_TYPE_UDPCLIENT,
-                     destinationAddress: addr],
-                     ignoreWarning     : true,
-                     callback          : "parse")                     
+                     callback: parse,
+                     timeout: 10,
+                     destinationAddress: addr])                     
   try {    
-    logDebug("getCurrentStatus: ${cmd} to ip ${addr}")
+    logDebug("sendCommand: ${cmd} to ip ${addr}")      
     sendHubCommand(pkt)                   
   }
   catch (Exception e) {      
       logDebug e
-  }         
+  }   
   
-  runIn(statusPollInterval(),getCurrentState)  
+  if (resched) {
+    runIn(pollingInterval, getCurrentStatus)       
+  }  
 }
 
 def WizCommandBuilder(methodIn, idIn, paramsIn) {   
@@ -212,21 +202,73 @@ def WizCommandSet(paramsIn) {
   sendCommand(WizCommandBuilder("setPilot",13,paramsIn))
 }
 
+def parseLightParams(params) {
+    lev = device.currentValue("level")  // TBD - slight hack here...
+
+    if (params.containsKey("state")) {    
+      sendEvent([name: "switch", value: params.state ? "on" : "off"])       
+    }
+    if (params.containsKey("dimming")) {
+      sendEvent([name: "level", value: params.dimming])
+      lev = params.dimming.toInteger()
+    }
+    if (params.containsKey("r")) {
+      hsv = RGBtoHSVMap([params.r,params.g,params.b])
+      hsv.level = lev
+      updateCurrentStatus(hsv,null,null, true)           
+    }    
+    if (params.containsKey("temp")) {
+      updateCurrentStatus(null,params.temp,null, true)
+    }
+    if (params.containsKey("speed")) {
+      sendEvent([name: "effectSpeed", value: params.speed])
+    }  
+    if (params.containsKey("sceneId")) {
+      updateCurrentStatus(null,null,params.sceneId, true)      
+    }
+    if (params.containsKey("rssi")) { 
+      sendEvent([name:"rssi", value: params.rssi])
+    } 
+}
+
 // handle command responses & status updates from bulb 
 def parse(String description) {
-   
-  i = description.indexOf("payload:")
-    if (i == -1) {
-        logDebug("Received packet with no payload")
-        return
-  }
-    
-  payload = new String(hubitat.helper.HexUtils.hexStringToByteArray(description.substring(i+8)))
 
-  logDebug("payload: ${payload}")
+// is it a valid packet from the light?
+  i = description.indexOf("payload")
+  if (i == -1) {
+    logDebug("parse: unknown datagram. Ignored.")
+    return
+  }  
   
- // TBD -- not yet implemented.  Will decode payload to json and update device
- // handler state with light status.
+  payload = new String(hubitat.helper.HexUtils.hexStringToByteArray(description.substring(i+8))) 
+  logDebug("parse: ${payload}") 
+   
+  json = null
+   
+  try {
+    json = new groovy.json.JsonSlurper().parseText(payload)
+      if (json == null){
+        logDebug "parse: JsonSlurper returned null"
+        return
+      }   
+      
+    i = payload.indexOf("getPilot")
+    if (i != -1) {  
+      parseLightParams(json.result)         // status request packet
+    }
+    else if (json.containsKey("params")) {
+      parseLightParams(json.params)  // command result packet
+    }
+    else {
+      logDebug("parse: unhandled packet. Ignored.")
+    }             
+  }
+  catch(e) {
+    log.error("parse Exception: ",e)
+    log.error payload
+    return
+  }    
 }
 
 /**
@@ -248,7 +290,7 @@ def off() {
 
 // sends all the events necessary to keep the light's state
 // in the hub coherent.
-def updateCurrentStatus(hsv,ct,effectNo) {
+def updateCurrentStatus(hsv,ct,effectNo,inParse = false) {
 
 // directly setting a color
   if (hsv != null) {
@@ -285,8 +327,9 @@ def updateCurrentStatus(hsv,ct,effectNo) {
     sendEvent([name:"effectName", value:name]) 
 
 // if we're setting effect to <none>, restore the previously
-// set mode and color.  Do nothing if no previous mode
-    if (effectNo == 0) {
+// set mode and color.  Do nothing if no previous mode, or if  
+// called from parse(), in response to a status message
+    if ((effectNo == 0) && !inParse) {
       mode = device.currentValue("colorMode")
       if (mode == null) return
       
@@ -400,6 +443,11 @@ def validateCT(ct) {
   }
 
   return ct    
+}
+
+def RGBtoHSVMap(rgb) {
+    def hsvList = hubitat.helper.ColorUtils.rgbToHSV(rgb)   
+    return [hue:hsvList[0], saturation:hsvList[1], level: hsvList[2]]
 }
 
 def getDeviceColor() {
