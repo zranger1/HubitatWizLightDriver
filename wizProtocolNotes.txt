@@ -37,7 +37,17 @@ Get current bulb status
   Typical returned status packet:
    {"method":"getPilot","id":15,"env":"pro","result":{"mac":"macxxxxxx","rssi":-50,"src":"","state":true,"sceneId":0,
       "r":29,"g":98,"b":179,"c":0,"w":0,"dimming":75}}
-        
+      
+getSystemConfig
+Get hardware and setup information 
+  Example:
+  {"method":"getSystemConfig","params":{}}  
+
+  Example result:  
+  {"method":"getSystemConfig","env":"pro","result":
+    {"mac":"a8xxx”,”homeId":76xxxx,”roomId":72xxx,”homeLock":false,"pairingLock":false,
+     "typeId":0,"moduleName":"ESP01_SHRGB1C_31","fwVersion":"1.17.1","groupId":0,"drvConf":[37,1]}}
+           
             
 To receive status heartbeat packets, issue a "registration" command via port 38899, and
 listen on port 38900.  After registering, the bulb will send you status updates for
