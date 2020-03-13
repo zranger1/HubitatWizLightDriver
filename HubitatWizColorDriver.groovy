@@ -12,6 +12,7 @@
  *    ----        ---           ---       ----
  *    2020-1-12   0.1           JEM       Created
  *    2020-3-08   1.0           JEM       Added status requester, update to 1.0
+ *    2020-3-13   1.01          JEM       Added duration to setLevel command to make RM happy
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -70,7 +71,7 @@ import groovy.transform.Field
     "Steampunk"
 ]
  
-def version() {"v1.00"}
+def version() {"v1.01"}
 def commandPort() { "38899" }
 def unknownString() { "none" }
 def statusPort()  { "38899" }  
@@ -379,7 +380,9 @@ def setColorTemperature(ct) {
 }
 
 // SwitchLevel commands
-def setLevel(lev) {
+// set brightness
+// NOTE - duration is not currently supported
+def setLevel(BigDecimal lev,BigDecimal duration=0)  {
   WizCommandSet(["dimming":lev])
   sendEvent([name: "level", value: lev]) 
 }
