@@ -381,8 +381,10 @@ def setColorTemperature(ct) {
 
 // SwitchLevel commands
 // set brightness
-// NOTE - duration is not currently supported
+// NOTE - Wiz color bulb does not support levels less than 10, and
+// the duration argument is not currently supported
 def setLevel(BigDecimal lev,BigDecimal duration=0)  {
+  if (lev < 10) lev = 10
   WizCommandSet(["dimming":lev])
   sendEvent([name: "level", value: lev]) 
 }
