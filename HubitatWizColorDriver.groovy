@@ -13,6 +13,7 @@
  *    2020-1-12   0.1           JEM       Created
  *    2020-3-08   1.0           JEM       Added status requester, update to 1.0
  *    2020-3-13   1.01          JEM       Added duration to setLevel command to make RM happy
+ *    2020-7-21   1.1.1         JEM       Use new Hub feature to fix unwanted logging of UDP timeouts.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -71,7 +72,7 @@ import groovy.transform.Field
     "Steampunk"
 ]
  
-def version() {"v1.01"}
+def version() {"1.1.1"}
 def commandPort() { "38899" }
 def unknownString() { "none" }
 def statusPort()  { "38899" }  
@@ -99,7 +100,7 @@ metadata {
 
 preferences {
     input("ip", "text", title: "IP Address", description: "IP address of Wiz light", required: true)
-    input name: "pollingInterval", type: "number", title: "Polling interval (seconds)", defaultValue: 10
+    input name: "pollingInterval", type: "number", title: "Time (seconds) between light status checks", defaultValue: 10    
     input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: false        
 }
 
@@ -118,17 +119,16 @@ def logDebug(String str) {
  * initialization & configuration
  */ 
 def installed(){
-    log.info "Wiz color light handler ${version()} installed."       
+    log.info "Wiz Color Light installed. Version${version()}."       
     initialize()
 }
 
 def updated() {
-    log.info "Wiz color light updated. ${version()}."
+    log.info "Wiz Color Light updated. Verseion ${version()}."
     initialize()
 }
  
 def initialize() {
-
     logDebug("initialize")
  
     unschedule()
@@ -159,6 +159,7 @@ def sendCommand(String cmd) {
   pkt = new hubitat.device.HubAction(cmd,
                      hubitat.device.Protocol.LAN,
                      [type: hubitat.device.HubAction.Type.LAN_TYPE_UDPCLIENT,
+                     parseWarning: true,
                      destinationAddress: addr])  
   try {    
     logDebug("sendCommand: ${cmd} to ip ${addr}")
@@ -169,25 +170,30 @@ def sendCommand(String cmd) {
   }      
 }
 
-def getCurrentStatus(resched=true) {
-  logDebug("getCurrentStatus")
+def getCurrentStatus(resched=true) {                             
+  if (ip != null) {
+    logDebug("getCurrentStatus")  
   
-  def addr = ip+":"+commandPort()
-  String cmd = WizCommandBuilder("getPilot",15,[" "])
+    def addr = ip+":"+commandPort()
+    String cmd = WizCommandBuilder("getPilot",15,[" "])
     
-  pkt = new hubitat.device.HubAction(cmd,
-                     hubitat.device.Protocol.LAN,
-                     [type: hubitat.device.HubAction.Type.LAN_TYPE_UDPCLIENT,
-                     callback: parse,
-                     timeout: 10,
-                     destinationAddress: addr])                     
-  try {    
-    logDebug("sendCommand: ${cmd} to ip ${addr}")      
-    sendHubCommand(pkt)                   
-  }
-  catch (Exception e) {      
+    pkt = new hubitat.device.HubAction(cmd,
+                       hubitat.device.Protocol.LAN,
+                       [type: hubitat.device.HubAction.Type.LAN_TYPE_UDPCLIENT,
+                       callback: parse,
+                       timeout: 10,
+                       parseWarning : true,
+                       destinationAddress: addr])                     
+    try {    
+      logDebug("sendCommand: ${cmd} to ip ${addr}")      
+      sendHubCommand(pkt)                   
+    }
+    catch (Exception e) {      
       logDebug e
-  }   
+    }  
+   } else {
+    logDebug("getCurrentStatus: ip address not set")   
+  }
   
   if (resched) {
     runIn(pollingInterval, getCurrentStatus)       
@@ -204,7 +210,7 @@ def WizCommandSet(paramsIn) {
 }
 
 def parseLightParams(params) {
-    lev = device.currentValue("level")  // TBD - slight hack here...
+    lev = device.currentValue("level")  
 
     if (params.containsKey("state")) {    
       sendEvent([name: "switch", value: params.state ? "on" : "off"])       
@@ -235,6 +241,10 @@ def parseLightParams(params) {
 // handle command responses & status updates from bulb 
 def parse(String description) {
 
+// ignore UDP timeout errors from the hub
+  def i = description.indexOf("UDPCLIENT_ERROR")
+  if (i != -1) { return }                                                                                             
+  
 // is it a valid packet from the light?
   i = description.indexOf("payload")
   if (i == -1) {
@@ -262,7 +272,7 @@ def parse(String description) {
       parseLightParams(json.params)  // command result packet
     }
     else {
-      logDebug("parse: unhandled packet. Ignored.")
+      logDebug("parse: Unhandled packet. Ignored.")
     }             
   }
   catch(e) {
