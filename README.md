@@ -1,10 +1,27 @@
-# HubitatWizLightDriver v1.l.1
+# HubitatWizLightDriver v1.l.2
 Hubitat Elevation device handler for Philips Wiz wi-fi color lights
 
 ## What can I do with this driver?
 This driver lets the Hubitat control Wiz color bulbs.  It will probably
 mostly work with Wiz on/off and variable CT white bulbs as well, but I only own
 the color bulbs at this point and I haven't tested the others yet.
+
+## v1.1.2 What's New
+Enables the use of Wiz Lighting Effects in Hubitat Scenes.  This is way nicer
+than it sounds -- the Scenes app does not currently support lighting effects, and
+some of the best looking colors on the Wiz bulb are only available as effects.
+
+Now you can set them via the bulb's devices page or with the Wiz app, and capture them with 
+the Scenes app on your hub in the normal way.  
+
+Technical note:  I store the effect information in an unused range of color temperatues that
+the bulb won't use but that the hub can read and store.  So if you use effects in your scenes,
+the bulb's color temperature may display an unusual looking value when you view or edit scenes
+settings.
+
+This is normal -- the CT value is 6000+the effect number -- and you can actually use this
+to manually change effects when you're editing scenes.  To set effect #1, for example, you'd
+set the bulb to CT mode and enter the color temperature 6001. 
 
 ## To Use
 Install and provision your Wiz bulb using the phone app.  Note the bulb's IP address.
