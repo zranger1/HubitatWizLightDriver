@@ -14,8 +14,8 @@ some of the best looking colors on the Wiz bulb are only available as effects.
 Now you can set them via the bulb's devices page or with the Wiz app, and capture them with 
 the Scenes app on your hub in the normal way.  
 
-Technical note:  I store the effect information in an unused range of color temperatues that
-the bulb won't use but that the hub can read and store.  So if you use effects in your scenes,
+Technical note:  I save effect information in a range of color temperatures that
+the bulb won't use but that the hub can read and store.  So when you use effects in your scenes,
 the bulb's color temperature may display an unusual looking value when you view or edit scenes
 settings.
 
