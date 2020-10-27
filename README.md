@@ -1,4 +1,4 @@
-# HubitatWizLightDriver v1.l.2
+# HubitatWizLightDriver v1.1.2
 Hubitat Elevation device handler for Philips Wiz wi-fi color lights
 
 ## What can I do with this driver?
