@@ -74,7 +74,7 @@ import groovy.transform.Field
     "32-Steampunk"
 ]
  
-def version() {"1.1.2"}
+def version() {"1.1.3"}
 def commandPort() { "38899" }
 def unknownString() { "none" }
 def statusPort()  { "38899" }  
