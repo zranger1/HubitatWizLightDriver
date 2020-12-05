@@ -15,6 +15,7 @@
  *    2020-3-13   1.01          JEM       Added duration to setLevel command to make RM happy
  *    2020-7-21   1.1.1         JEM       Use new Hub feature to fix unwanted logging of UDP timeouts.
  *    2020-10-26  1.1.2         JEM       Enable use of Wiz lighting effects in HE Scenes
+ *    2020-12-05  1.1.3         JEM       Hubitat Package Manager support
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -79,7 +80,12 @@ def unknownString() { "none" }
 def statusPort()  { "38899" }  
 
 metadata {
-    definition (name: "Wiz Color Light", namespace: "jem", author: "JEM",importUrl: "") {
+    definition (
+        name: "Wiz Color Light",
+        namespace: "ZRanger1",
+        author: "ZRanger1(JEM)",
+        importUrl: "https://raw.githubusercontent.com/zranger1/HubitatWizLightDriver/master/HubitatWizColorDriver.groovy") {
+        
         capability "Actuator"
         capability "SignalStrength"  
         capability "LightEffects"
