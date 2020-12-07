@@ -16,6 +16,7 @@
  *    2020-7-21   1.1.1         JEM       Use new Hub feature to fix unwanted logging of UDP timeouts.
  *    2020-10-26  1.1.2         JEM       Enable use of Wiz lighting effects in HE Scenes
  *    2020-12-05  1.1.3         JEM       Hubitat Package Manager support
+ *    2020-12-07  1.2.0         JEM       Change dimmer behavior to allow on/off switching
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -308,12 +309,25 @@ def parse(String description) {
 // Switch commands 
 def on() {         
   WizCommandSet(["state":true])
-  sendEvent([name: "switch", value: "on"])   
+  sendEvent([name: "switch", value: "on"])  
 }
 
 def off() {
   WizCommandSet(["state":false])
   sendEvent([name: "switch", value: "off"]) 
+}
+
+// light switch management helper
+def setSwitchState(state) {
+  sw = device.currentValue("switch") ? "on" : "off"
+  if (sw == state) return  // switch is already in desired state
+
+// if not in desired state, set switch to new state  
+  if (sw) {
+    on() 
+  } else {
+    off()
+  }
 }
 
 // ColorControl commands
@@ -434,14 +448,24 @@ def setColorTemperature(ct) {
   updateCurrentStatus(null,ct,null)  
 }
 
-// SwitchLevel commands
-// set brightness
+// SwitchLevel command
+// Set brightness, turn bulb off if fully dimmed, turn it on
+// if it's off and the dimmer is changed to > 0
 // NOTE - Wiz color bulb does not support levels less than 10, and
 // the duration argument is not currently supported
 def setLevel(BigDecimal lev,BigDecimal duration=0)  {
-  if (lev < 10) lev = 10
+  if (lev < 10) {
+    lev = 10
+    newSwitchState = 0
+  }
+  else {
+    newSwitchState = 1
+  }
   WizCommandSet(["dimming":lev])
   sendEvent([name: "level", value: lev]) 
+  
+// turn light on or off if needed.  
+  setSwitchState(newSwitchState)  
 }
 
 // LightEffects commands
