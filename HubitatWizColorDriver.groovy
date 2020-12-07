@@ -16,7 +16,7 @@
  *    2020-7-21   1.1.1         JEM       Use new Hub feature to fix unwanted logging of UDP timeouts.
  *    2020-10-26  1.1.2         JEM       Enable use of Wiz lighting effects in HE Scenes
  *    2020-12-05  1.1.3         JEM       Hubitat Package Manager support
- *    2020-12-07  1.2.0         JEM       Change dimmer behavior to allow on/off switching
+ *    2020-12-07  1.2.1         JEM       Change dimmer behavior to allow on/off switching
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -225,15 +225,22 @@ def WizCommandSet(paramsIn) {
   sendCommand(WizCommandBuilder("setPilot",13,paramsIn))
 }
 
+// NOTE: These items are in priority order.  Be careful about changing it
 def parseLightParams(params) {
-    lev = device.currentValue("level")  
+    lev = device.currentValue("level") 
 
     if (params.containsKey("state")) {    
       sendEvent([name: "switch", value: params.state ? "on" : "off"])       
-    }
+    }   
     if (params.containsKey("dimming")) {
-      sendEvent([name: "level", value: params.dimming])
-      lev = params.dimming.toInteger()
+      if (device.currentValue("switch") == "on") {
+        sendEvent([name: "level", value: params.dimming])
+        lev = params.dimming.toInteger()             
+      }
+      else {
+        sendEvent([name: "level", value: 0]) 
+        lev = 0;
+      }                  
     }
     if (params.containsKey("r")) {
       hsv = RGBtoHSVMap([params.r,params.g,params.b])
@@ -323,7 +330,7 @@ def setSwitchState(state) {
   if (sw == state) return  // switch is already in desired state
 
 // if not in desired state, set switch to new state  
-  if (sw) {
+  if (state) {
     on() 
   } else {
     off()
@@ -454,14 +461,15 @@ def setColorTemperature(ct) {
 // NOTE - Wiz color bulb does not support levels less than 10, and
 // the duration argument is not currently supported
 def setLevel(BigDecimal lev,BigDecimal duration=0)  {
+  newSwitchState = 1
   if (lev < 10) {
-    lev = 10
+    lev = 0
     newSwitchState = 0
   }
   else {
     newSwitchState = 1
   }
-  WizCommandSet(["dimming":lev])
+  WizCommandSet(["dimming":(lev > 10)? lev : 10])
   sendEvent([name: "level", value: lev]) 
   
 // turn light on or off if needed.  
