@@ -6,11 +6,15 @@ This driver lets the Hubitat control Wiz color bulbs.  It will probably
 mostly work with Wiz on/off and variable CT white bulbs as well, but I only own
 the color bulbs at this point and I haven't tested the others yet.
 
-## What's New - v1.2.1
+## What's New - v1.2.2
+Fixed issues with Hubitat color bulb controller tile.  You should now be able
+to move back and forth between effects, RGB colors and color temperatures easily.
+
+## Previously...
+### v1.2.1
 Change to dimmer behavior -- the dimmer now turns the light off when fully dim,
 and back on if the bulb is off and the dimmer is set above the minimum.
 
-## Previously...
 ### v1.1.2 
 Enables the use of Wiz Lighting Effects in Hubitat Scenes.  This is way nicer
 than it sounds -- the Scenes app does not currently support lighting effects, and

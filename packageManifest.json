@@ -1,9 +1,9 @@
 {
   "packageName": "HubitatWizLightDriver",
   "author": "ZRanger1(JEM)",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "minimumHEVersion": "2.1.9",
-  "dateReleased": "2020-12-07",
+  "dateReleased": "2020-12-09",
   "drivers": [
     {
       "id": "c134c2d4-62d8-4be1-aa12-0367bb2ed60e",

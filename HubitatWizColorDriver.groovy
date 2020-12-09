@@ -17,6 +17,7 @@
  *    2020-10-26  1.1.2         JEM       Enable use of Wiz lighting effects in HE Scenes
  *    2020-12-05  1.1.3         JEM       Hubitat Package Manager support
  *    2020-12-07  1.2.1         JEM       Change dimmer behavior to allow on/off switching
+ *    2020-12-09  1.2.2         JEM       Fix issue #2 - Hubitat UI requires valid RGB even in ct mode
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -75,7 +76,7 @@ import groovy.transform.Field
     "32-Steampunk"
 ]
  
-def version() {"1.1.3"}
+def version() {"1.2.2"}
 def commandPort() { "38899" }
 def unknownString() { "none" }
 def statusPort()  { "38899" }  
@@ -351,7 +352,6 @@ def updateCurrentStatus(hsv,ct,effectNo,inParse = false) {
     sendEvent([name: "saturation", value: hsv.saturation])    
     
     sendEvent([name: "colorMode", value: "RGB"])
-    sendEvent([name: "colorTemperature", value: unknownString()])
     sendEvent([name: "effectNumber", value: 0])
     sendEvent([name: "effectName", value: unknownString()])      
     
@@ -360,10 +360,7 @@ def updateCurrentStatus(hsv,ct,effectNo,inParse = false) {
   }
 // setting color temperature  
   else if (ct != null) {
-    logDebug("updateCurrentStatus - set temp ${ct}")  
-    sendEvent([name: "hue", value: unknownString()])  
-    sendEvent([name: "saturation", value: unknownString()])    
-    
+    logDebug("updateCurrentStatus - set temp ${ct}")     
     sendEvent([name: "colorMode", value: "CT"])
     sendEvent([name: "colorTemperature", value: ct])
     sendEvent([name: "effectNumber", value: 0])
@@ -411,9 +408,16 @@ def updateCurrentStatus(hsv,ct,effectNo,inParse = false) {
 }
 
 def setColor(hsv) {
+    def rgb
+    
     logDebug("setColor(${hsv})")   
-     
-    def rgb = hubitat.helper.ColorUtils.hsvToRGB([hsv.hue, hsv.saturation, hsv.level])
+    try {
+      rgb = hubitat.helper.ColorUtils.hsvToRGB([hsv.hue, hsv.saturation, hsv.level])
+    }
+    catch (e) {
+      logDebug("Attempt to set RGB color w/NaN value - ignoring.")
+      return
+    }
     WizCommandSet(["r":rgb[0],"g":rgb[1],"b":rgb[2]]) 
     
     updateCurrentStatus(hsv,null,null)
