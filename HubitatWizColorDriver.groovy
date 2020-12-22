@@ -8,16 +8,17 @@
  *  Requirements:
  *    A provisioned (with the Wiz app) Wiz color bulb on the local LAN. 
  *
- *    Date        Ver           Who       What
- *    ----        ---           ---       ----
- *    2020-1-12   0.1           JEM       Created
- *    2020-3-08   1.0           JEM       Added status requester, update to 1.0
- *    2020-3-13   1.01          JEM       Added duration to setLevel command to make RM happy
- *    2020-7-21   1.1.1         JEM       Use new Hub feature to fix unwanted logging of UDP timeouts.
- *    2020-10-26  1.1.2         JEM       Enable use of Wiz lighting effects in HE Scenes
- *    2020-12-05  1.1.3         JEM       Hubitat Package Manager support
- *    2020-12-07  1.2.1         JEM       Change dimmer behavior to allow on/off switching
- *    2020-12-09  1.2.2         JEM       Fix issue #2 - Hubitat UI requires valid RGB even in ct mode
+ *    Date        Ver     Who       What
+ *    ----        ---     ---       ----
+ *    2020-1-12   0.1     JEM       Created
+ *    2020-3-08   1.0     JEM       Added status requester, update to 1.0
+ *    2020-3-13   1.01    JEM       Added duration to setLevel command to make RM happy
+ *    2020-7-21   1.1.1   JEM       Use new Hub feature to fix unwanted logging of UDP timeouts.
+ *    2020-10-26  1.1.2   JEM       Enable use of Wiz lighting effects in HE Scenes
+ *    2020-12-05  1.1.3   JEM       Hubitat Package Manager support
+ *    2020-12-07  1.2.1   JEM       Change dimmer behavior to allow on/off switching
+ *    2020-12-09  1.2.2   JEM       Fix issue #2 - Hubitat UI requires valid RGB even in ct mode
+ *    2020-12-22  1.2.3   JEM       Change on/off/level message order to improve dimmer behavior 
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -76,7 +77,7 @@ import groovy.transform.Field
     "32-Steampunk"
 ]
  
-def version() {"1.2.2"}
+def version() {"1.2.3"}
 def commandPort() { "38899" }
 def unknownString() { "none" }
 def statusPort()  { "38899" }  
@@ -317,7 +318,13 @@ def parse(String description) {
 // Switch commands 
 def on() {         
   WizCommandSet(["state":true])
-  sendEvent([name: "switch", value: "on"])  
+  sendEvent([name: "switch", value: "on"]) 
+
+  lev = device.currentValue("level") 
+  if (lev < 10) {
+    WizCommandSet(["dimming":10])
+    sendEvent([name: "level", value: 10])     
+  }
 }
 
 def off() {
@@ -465,19 +472,23 @@ def setColorTemperature(ct) {
 // NOTE - Wiz color bulb does not support levels less than 10, and
 // the duration argument is not currently supported
 def setLevel(BigDecimal lev,BigDecimal duration=0)  {
-  newSwitchState = 1
-  if (lev < 10) {
-    lev = 0
-    newSwitchState = 0
-  }
-  else {
-    newSwitchState = 1
-  }
-  WizCommandSet(["dimming":(lev > 10)? lev : 10])
-  sendEvent([name: "level", value: lev]) 
   
-// turn light on or off if needed.  
-  setSwitchState(newSwitchState)  
+// if trying to dim below 10%, set the bulb to full dim and
+// turn it off  
+  if (lev < 10) {
+    newSwitchState = 0    
+    WizCommandSet(["dimming":10])
+    sendEvent([name: "level", value: 0]) 
+    setSwitchState(0)    
+  }
+ 
+// otherwise, set to the specified level, checking first to see
+// that the bulb is on (otherwise it won't listen to dimming commands)
+  else {
+    setSwitchState(1)   // turn on light if necessary 
+    WizCommandSet(["dimming":lev])
+    sendEvent([name: "level", value: lev])      
+  }
 }
 
 // LightEffects commands
