@@ -4,19 +4,35 @@ Hubitat Elevation device handler for Philips Wiz wi-fi color lights
 ## What can I do with this driver?
 This driver lets the Hubitat control Wiz color bulbs.  It will probably
 mostly work with Wiz on/off and variable CT white bulbs as well, but I only own
-the color bulbs at this point and I haven't tested the others yet.
+the color bulbs at this point and I haven't tested other types.
 
-## What's New - v1.2.3
-Change to on/off/level message order to improve dimmer behavior
+## What's New - v1.2.4
+Support for dynamic assignment of IP addresses in large installations. Added *setIPAddress*
+and *macAddress* for use with the Maker API.  
+
+*setIPAddress* allows an external system to set the bulb's IP address.  Once set, the
+new address overrides the user-entered address, and will persist through reboots.  This
+allows an external program to monitor the network for address reassignments and adjust
+bulb IP addresses on the Hubitat accordingly.
+
+To use, send the setIPAddress command via Maker API in the following format:
+
+```devices/<device number>/setIPAddress/192.168.1.xxx```
+
+The *macAddress* attribute is now available to as part of the bulb's device information.
+It contains the bulb's MAC address as a String, and can be used by external programs to
+help find the bulb's IP address. 
+
+These features are enabled by default, but can be disabled from the device page UI.
 
 ## Previously...
+### v1.2.3
+Change to on/off/level message order to improve dimmer behavior
 ### v1.2.2
 Fixed issues with Hubitat color bulb controller tile.  
-
 ### v1.2.1
 Change to dimmer behavior -- the dimmer now turns the light off when fully dim,
 and back on if the bulb is off and the dimmer is set above the minimum.
-
 ### v1.1.2 
 Enables the use of Wiz Lighting Effects in Hubitat Scenes.  This is way nicer
 than it sounds -- the Scenes app does not currently support lighting effects, and

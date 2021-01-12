@@ -19,7 +19,8 @@
  *    2020-12-07  1.2.1   JEM       Change dimmer behavior to allow on/off switching
  *    2020-12-09  1.2.2   JEM       Fix issue #2 - Hubitat UI requires valid RGB even in ct mode
  *    2020-12-22  1.2.3   JEM       Change on/off/level message order to improve dimmer behavior 
- *
+ *    2021-01-12  1.2.4   JEM       Add setIPAddress/macAddress to support large installations  
+ *   
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
  *
@@ -29,7 +30,7 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  */
-
+ 
 import hubitat.helper.InterfaceUtils
 import hubitat.helper.HexUtils
 import groovy.transform.Field
@@ -77,7 +78,7 @@ import groovy.transform.Field
     "32-Steampunk"
 ]
  
-def version() {"1.2.3"}
+def version() {"1.2.4"}
 def commandPort() { "38899" }
 def unknownString() { "none" }
 def statusPort()  { "38899" }  
@@ -87,8 +88,7 @@ metadata {
         name: "Wiz Color Light",
         namespace: "ZRanger1",
         author: "ZRanger1(JEM)",
-        importUrl: "https://raw.githubusercontent.com/zranger1/HubitatWizLightDriver/master/HubitatWizColorDriver.groovy") {
-        
+        importUrl: "https://raw.githubusercontent.com/zranger1/HubitatWizLightDriver/master/HubitatWizColorDriver.groovy") {        
         capability "Actuator"
         capability "SignalStrength"  
         capability "LightEffects"
@@ -101,16 +101,19 @@ metadata {
         
         command    "pulse",[[name:"Delta*", type: "NUMBER",,description: "Change in intensity, positive or negative",constraints:[]],
                             [name:"Duration*", type: "NUMBER", description: "Duration in milliseconds", constraints:[]]]                           
-        command    "setEffectSpeed", [[name: "Effect speed*", type: "NUMBER", description: "(0 to 200)", constraints:[]]]     
+        command    "setEffectSpeed", [[name: "Effect speed*", type: "NUMBER", description: "(0 to 200)", constraints:[]]]    
+        command    "setIPAddress", [[name: "IP Address*", type: "string", description: "IPv4 Address", constraints:[]]]    
         
         attribute  "effectNumber","number"
-        attribute  "effectSpeed", "number" 
+        attribute  "effectSpeed", "number"         
+        attribute  "macAddress","string"
     }
 }
 
-preferences {
+preferences {    
     input("ip", "text", title: "IP Address", description: "IP address of Wiz light", required: true)
     input name: "pollingInterval", type: "number", title: "Time (seconds) between light status checks", defaultValue: 6    
+    input name: "makerIPEnable", type: "bool", title: "Allow Maker API to set IP address", defaultValue: true
     input name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: false        
 }
 
@@ -152,6 +155,10 @@ def initialize() {
     val =  (val == null) ? val = 3000 : val.toInteger();   
     state.lastTemp = val;  // reasonable default color temp
     
+    if (makerIPEnable) {
+        state.ipAddress = null
+    }
+    
     eff = new groovy.json.JsonBuilder(lightEffects)    
     sendEvent(name:"lightEffects",value: eff)   
 
@@ -171,8 +178,22 @@ def refresh() {
  * Network infrastructure
  */
  
+def getIPString() {
+  String addr;
+  
+  if (makerIPEnable) {
+     addr = state.ipAddress
+     if (addr == null) addr = ip;
+     addr = addr+":"+commandPort()  
+  }
+  else {
+   addr = ip+":"+commandPort()
+  }
+  return addr;
+} 
+ 
 def sendCommand(String cmd) {
-  def addr = ip+":"+commandPort()
+  def addr = getIPString();
     
   pkt = new hubitat.device.HubAction(cmd,
                      hubitat.device.Protocol.LAN,
@@ -192,7 +213,7 @@ def getCurrentStatus(resched=true) {
   if (ip != null) {
     logDebug("getCurrentStatus")  
   
-    def addr = ip+":"+commandPort()
+    def addr = getIPString()
     String cmd = WizCommandBuilder("getPilot",15,[" "])
     
     pkt = new hubitat.device.HubAction(cmd,
@@ -261,6 +282,9 @@ def parseLightParams(params) {
     if (params.containsKey("rssi")) { 
       sendEvent([name:"rssi", value: params.rssi])
     } 
+    if (params.containsKey("mac")) {
+      sendEvent([name:"macAddress", value: params.mac])
+    }   
 }
 
 // handle command responses & status updates from bulb 
@@ -534,6 +558,18 @@ def pulse(BigDecimal intensity, BigDecimal millis) {
 def setEffectSpeed(BigDecimal speed) {
   WizCommandSet(["speed":speed])
   sendEvent([name: "effectSpeed", value: speed])   
+}
+
+// maker API can call this to set IP address, enabling mDNS
+// resolution of bulb mac vs. address on remote system.
+def setIPAddress(String addr) {
+   if (makerIPEnable) {
+     logDebug("setIPAdress(${addr})")   
+       state.ipAddress = addr;
+   }   
+   else {
+     logDebug("setIPAddress: request from Maker API denied.");
+   }
 }
 
 // Additional color helper functions 
