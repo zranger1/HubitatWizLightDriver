@@ -102,11 +102,12 @@ metadata {
         command    "pulse",[[name:"Delta*", type: "NUMBER",,description: "Change in intensity, positive or negative",constraints:[]],
                             [name:"Duration*", type: "NUMBER", description: "Duration in milliseconds", constraints:[]]]                           
         command    "setEffectSpeed", [[name: "Effect speed*", type: "NUMBER", description: "(0 to 200)", constraints:[]]]    
-        command    "setIPAddress", [[name: "IP Address*", type: "string", description: "IPv4 Address", constraints:[]]]    
+        command    "setIPAddress",["string"]
         
         attribute  "effectNumber","number"
         attribute  "effectSpeed", "number"         
         attribute  "macAddress","string"
+        attribute  "ipAddress","string"
     }
 }
 
@@ -147,24 +148,27 @@ def initialize() {
     unschedule()
     state.version = version()
     
+// Build a reasonable default color temp setting to use if
+// the bulb is unavailable at initialization time.
     val = device.currentValue("colorMode")
     if (val == null) val = "CT"    
-    state.lastMode = val    // 
+    state.lastMode = val    
     
     val = device.currentValue("colorTemperature")
     val =  (val == null) ? val = 3000 : val.toInteger();   
-    state.lastTemp = val;  // reasonable default color temp
-    
-    if (makerIPEnable) {
-        state.ipAddress = null
-    }
-    
+    state.lastTemp = val; 
+         
+// initialize parameters for all bulb modes so the Hub 
+// dashboard will work correctly    
     eff = new groovy.json.JsonBuilder(lightEffects)    
     sendEvent(name:"lightEffects",value: eff)   
 
     sendEvent([name: "hue", value: 0])  
     sendEvent([name: "level", value: 100])  
-    sendEvent([name: "saturation", value: 100])      
+    sendEvent([name: "saturation", value: 100])  
+    
+// save IP address in a place that's accessible to Maker API        
+    sendEvent([name: "ipAddress", value: ip])    
   
     runIn(pollingInterval, getCurrentStatus)     
 }
@@ -179,17 +183,7 @@ def refresh() {
  */
  
 def getIPString() {
-  String addr;
-  
-  if (makerIPEnable) {
-     addr = state.ipAddress
-     if (addr == null) addr = ip;
-     addr = addr+":"+commandPort()  
-  }
-  else {
-   addr = ip+":"+commandPort()
-  }
-  return addr;
+   return ip+":"+commandPort()
 } 
  
 def sendCommand(String cmd) {
@@ -564,8 +558,9 @@ def setEffectSpeed(BigDecimal speed) {
 // resolution of bulb mac vs. address on remote system.
 def setIPAddress(String addr) {
    if (makerIPEnable) {
-     logDebug("setIPAdress(${addr})")   
-       state.ipAddress = addr;
+       logDebug("setIPAdress(${addr})")   
+       device.updateSetting("ip",addr);
+       sendEvent([name: "ipAddress", value: addr])  
    }   
    else {
      logDebug("setIPAddress: request from Maker API denied.");

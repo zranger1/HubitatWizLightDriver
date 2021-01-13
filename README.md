@@ -7,8 +7,8 @@ mostly work with Wiz on/off and variable CT white bulbs as well, but I only own
 the color bulbs at this point and I haven't tested other types.
 
 ## What's New - v1.2.4
-Support for dynamic assignment of IP addresses in large installations. Added *setIPAddress*
-and *macAddress* for use with the Maker API.  
+Support for dynamic assignment of IP addresses in large installations. Added *setIPAddress*,
+*macAddress*. and *ipAddress* for use with the Maker API.  
 
 *setIPAddress* allows an external system to set the bulb's IP address.  Once set, the
 new address overrides the user-entered address, and will persist through reboots.  This
@@ -19,9 +19,8 @@ To use, send the setIPAddress command via Maker API in the following format:
 
 ```devices/<device number>/setIPAddress/192.168.1.xxx```
 
-The *macAddress* attribute is now available to as part of the bulb's device information.
-It contains the bulb's MAC address as a String, and can be used by external programs to
-help find the bulb's IP address. 
+The *macAddress* and *ipAddress* attributes are now available to as part of the bulb's device information,
+and can be used by external programs to aid in network management. 
 
 These features are enabled by default, but can be disabled from the device page UI.
 
