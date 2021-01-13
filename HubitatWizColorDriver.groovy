@@ -19,7 +19,7 @@
  *    2020-12-07  1.2.1   JEM       Change dimmer behavior to allow on/off switching
  *    2020-12-09  1.2.2   JEM       Fix issue #2 - Hubitat UI requires valid RGB even in ct mode
  *    2020-12-22  1.2.3   JEM       Change on/off/level message order to improve dimmer behavior 
- *    2021-01-12  1.2.4   JEM       Add setIPAddress/macAddress to support large installations  
+ *    2021-01-13  1.2.4   JEM       Add setIPAddress/macAddress to support large installations  
  *   
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -192,6 +192,7 @@ def sendCommand(String cmd) {
   pkt = new hubitat.device.HubAction(cmd,
                      hubitat.device.Protocol.LAN,
                      [type: hubitat.device.HubAction.Type.LAN_TYPE_UDPCLIENT,
+                     callback: parse,
                      parseWarning: true,
                      destinationAddress: addr])  
   try {    
@@ -205,26 +206,9 @@ def sendCommand(String cmd) {
 
 def getCurrentStatus(resched=true) {                             
   if (ip != null) {
-    logDebug("getCurrentStatus")  
-  
-    def addr = getIPString()
     String cmd = WizCommandBuilder("getPilot",15,[" "])
-    
-    pkt = new hubitat.device.HubAction(cmd,
-                       hubitat.device.Protocol.LAN,
-                       [type: hubitat.device.HubAction.Type.LAN_TYPE_UDPCLIENT,
-                       callback: parse,
-                       timeout: 10,
-                       parseWarning : true,
-                       destinationAddress: addr])                     
-    try {    
-      logDebug("sendCommand: ${cmd} to ip ${addr}")      
-      sendHubCommand(pkt)                   
-    }
-    catch (Exception e) {      
-      logDebug e
-    }  
-   } else {
+    sendCommand(cmd);
+  } else {
     logDebug("getCurrentStatus: ip address not set")   
   }
   
@@ -250,14 +234,12 @@ def parseLightParams(params) {
       sendEvent([name: "switch", value: params.state ? "on" : "off"])       
     }   
     if (params.containsKey("dimming")) {
-      if (device.currentValue("switch") == "on") {
-        sendEvent([name: "level", value: params.dimming])
-        lev = params.dimming.toInteger()             
-      }
-      else {
-        sendEvent([name: "level", value: 0]) 
+      if ((params.dimming <= 10) && (!params.state)) {
         lev = 0;
-      }                  
+      } else {
+        lev = params.dimming  
+      }
+      sendEvent([name: "level", value: lev])
     }
     if (params.containsKey("r")) {
       hsv = RGBtoHSVMap([params.r,params.g,params.b])
@@ -309,17 +291,17 @@ def parse(String description) {
       
     i = payload.indexOf("getPilot")
     if (i != -1) {  
-      parseLightParams(json.result)         // status request packet
+      parseLightParams(json.result)  // status request packet
     }
     else if (json.containsKey("params")) {
       parseLightParams(json.params)  // command result packet
     }
     else if (json.containsKey("setPilot")) {
-       // got response from command.  Uncomment logger if needed for debugging
+       // received ack from command.  Uncomment below if needed for debugging
        // logDebug("parse: setPilot response logged");
     }
     else {
-      logDebug("parse: Unhandled packet. Ignored.")
+      ; // logDebug("parse: Unhandled packet. Ignored.")
     }             
   }
   catch(e) {
@@ -343,6 +325,7 @@ def on() {
     WizCommandSet(["dimming":10])
     sendEvent([name: "level", value: 10])     
   }
+  pauseExecution(100)   // wait for bulb to catch up after starting    
 }
 
 def off() {
@@ -352,7 +335,7 @@ def off() {
 
 // light switch management helper
 def setSwitchState(state) {
-  sw = device.currentValue("switch") ? "on" : "off"
+  sw = (device.currentValue("switch") == "on")
   if (sw == state) return  // switch is already in desired state
 
 // if not in desired state, set switch to new state  
@@ -371,7 +354,7 @@ def updateCurrentStatus(hsv,ct,effectNo,inParse = false) {
 
 // directly setting a color
   if (hsv != null) {
-    logDebug("updateCurrentStatus - set color ${hsv}")
+//    logDebug("updateCurrentStatus - set color ${hsv}")
     sendEvent([name: "hue", value: hsv.hue])  
     sendEvent([name: "level", value: hsv.level ])  
     sendEvent([name: "saturation", value: hsv.saturation])    
@@ -385,7 +368,7 @@ def updateCurrentStatus(hsv,ct,effectNo,inParse = false) {
   }
 // setting color temperature  
   else if (ct != null) {
-    logDebug("updateCurrentStatus - set temp ${ct}")     
+//    logDebug("updateCurrentStatus - set temp ${ct}")     
     sendEvent([name: "colorMode", value: "CT"])
     sendEvent([name: "colorTemperature", value: ct])
     sendEvent([name: "effectNumber", value: 0])
@@ -468,8 +451,7 @@ def setColorTemperature(ct) {
 
 // if it's an effect code, set the current effect, then set the
 // (now fake) color temp to the coded value and return.
-  if ((ct > 6000) && (ct <= 6032)) {
-//    updateCurrentStatus(null,ct,null)      
+  if ((ct > 6000) && (ct <= 6032)) { 
     setEffect(ct-6000);
     return;
   }
@@ -497,13 +479,14 @@ def setLevel(BigDecimal lev,BigDecimal duration=0)  {
     newSwitchState = 0    
     WizCommandSet(["dimming":10])
     sendEvent([name: "level", value: 0]) 
-    setSwitchState(0)    
+    pauseExecution(100)
+    setSwitchState(false)    
   }
  
 // otherwise, set to the specified level, checking first to see
 // that the bulb is on (otherwise it won't listen to dimming commands)
   else {
-    setSwitchState(1)   // turn on light if necessary 
+    setSwitchState(true)   // turn on light if necessary 
     WizCommandSet(["dimming":lev])
     sendEvent([name: "level", value: lev])      
   }
