@@ -1,11 +1,11 @@
 {
   "packageName": "HubitatWizLightDriver",
   "author": "ZRanger1(JEM)",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "minimumHEVersion": "2.1.9",
   "documentationLink": "https://raw.githubusercontent.com/zranger1/HubitatWizLightDriver/master/README.md",
   "communityLink": "https://community.hubitat.com/t/release-philips-wiz-color-light-driver-v1-01/31818",
-  "dateReleased": "2021-1-13",
+  "dateReleased": "2021-1-17",
   "drivers": [
     {
       "id": "c134c2d4-62d8-4be1-aa12-0367bb2ed60e",
