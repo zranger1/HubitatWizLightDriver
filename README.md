@@ -47,6 +47,11 @@ and can be used by external programs to aid in network management.
 
 These features are enabled by default, but can be disabled from the device page UI.
 
+## Donation
+If this project saves you time and effort, please consider donating to help support further development.  Every donut or cup of coffee helps!  :-)
+
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate/?hosted_button_id=YM9DKUT5V34G8)
+
 ## Credit where credit is due
 I got protocol and hardware information, and inspiration from the following:
 
