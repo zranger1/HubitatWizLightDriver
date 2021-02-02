@@ -32,6 +32,7 @@
  *    2020-12-22  1.2.3   "     Change on/off/level message order to improve dimmer behavior 
  *    2021-01-13  1.2.4   "     Add setIPAddress/macAddress to support large installations 
  *    2021-01-17  1.2.5   "     Performance& stability improvements
+ *    2021-02-02  1.2.6   "     Remove unused code in definition 
  *   
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -89,7 +90,7 @@ import groovy.transform.Field
     32:"Steampunk"
 ]
  
-def version() {"1.2.5"}
+def version() {"1.2.6"}
 def commandPort() { "38899" }
 def unknownString() { "none" }
 def statusPort()  { "38899" } 
@@ -111,9 +112,9 @@ metadata {
         capability "ColorTemperature"
         capability "ColorMode"     
         
-        command    "pulse",[[name:"Delta*", type: "NUMBER",,description: "Change in intensity, positive or negative",constraints:[]],
-                            [name:"Duration*", type: "NUMBER", description: "Duration in milliseconds", constraints:[]]]                           
-        command    "setEffectSpeed", [[name: "Effect speed*", type: "NUMBER", description: "(0 to 200)", constraints:[]]]    
+        command    "pulse",[[name:"Delta*", type: "NUMBER",,description: "Change in intensity, positive or negative"],
+                            [name:"Duration*", type: "NUMBER", description: "Duration in milliseconds"]]                           
+        command    "setEffectSpeed", [[name: "Effect speed*", type: "NUMBER", description: "(0 to 200)"]]    
         command    "setIPAddress",["string"]
         
         attribute  "effectNumber","number"
