@@ -1,6 +1,15 @@
 # Change Log for HubitatWizLightDriver 
 Hubitat Elevation device handler for Philips Wiz wi-fi color lights
 
+### v1.2.6
+Minor code cleanup
+
+### v1.2.5
+Performance and stability improvements.
+
+Maker API can now optionally call setEffect with an effect name instead of a number.  For example:
+```devices/<device number>/setEffect/Club```
+
 ### v1.2.4
 Support for dynamic assignment of IP addresses in large installations. Added *setIPAddress*,
 *macAddress*. and *ipAddress* for use with the Maker API.  

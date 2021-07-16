@@ -8,9 +8,6 @@
  *  Requirements:
  *    A provisioned (with the Wiz app) Wiz color bulb on the local LAN. 
  *
- *    Date        Ver     Who       What
- *    ----     /**
- *
  *  File: HubitatWizLightDriver
  *  Platform: Hubitat
  *
@@ -33,6 +30,7 @@
  *    2021-01-13  1.2.4   "     Add setIPAddress/macAddress to support large installations 
  *    2021-01-17  1.2.5   "     Performance& stability improvements
  *    2021-02-02  1.2.6   "     Remove unused code in definition 
+ *    2021-07-16  1.2.7   "     Support new 3 parameter setColorTemperature capability
  *   
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -485,7 +483,7 @@ def setSaturation(value) {
 }
 
 // ColorTemperature & ColorMode commands
-def setColorTemperature(ct) {
+def setColorTemperatureWorker(ct) {
   logDebug("setColorTemperature(${ct})")
   
 // Experimental -- valid color temp range is 2500-6000k
@@ -534,6 +532,12 @@ def setLevel(BigDecimal lev,BigDecimal duration=0)  {
     WizCommandSet(["dimming":lev],delay)
     sendEvent([name: "level", value: lev])      
   }
+}
+
+// new 3 parameter form for firmware v2.26
+def setColorTemperature(ct,level = null,transitionTime = null) {
+  if (level != null) setLevel(level,transitionTime);
+  setColorTemperatureWorker(ct);
 }
 
 // LightEffects commands

@@ -6,11 +6,9 @@ This driver lets the Hubitat control Wiz color bulbs.  It will probably
 mostly work with Wiz on/off and variable CT white bulbs as well, but I only own
 the color bulbs at this point and I haven't tested other types.
 
-## What's New - v1.2.5
-Performance and stability improvements.
-
-Maker API can now optionally call setEffect with an effect name instead of a number.  For example:
-```devices/<device number>/setEffect/Club```
+## What's New - v1.2.7
+Support for the new 3 parameter setColorTemperature capability added
+in Hubitat firmware v2.2.6
 
 ## Previously...
 For information on previous versions, see CHANGELOG.md in this repository.
