@@ -6,11 +6,9 @@ This driver lets the Hubitat control Wiz color bulbs.  It will probably
 mostly work with Wiz on/off and variable CT white bulbs as well, but I only own
 the color bulbs at this point and I haven't tested other types.
 
-## What's New - v1.2.8
-Support for the new 3 parameter setColorTemperature capability added
-in Hubitat firmware v2.2.6
-
-Fix to make sure polling restarts properly after Hub reboot.
+## What's New - v1.2.9
+Stop rssi from showing up as a state change in event log in
+Hubitat 2.2.8.xxx firmware.
 
 ## Previously...
 For information on previous versions, see CHANGELOG.md in this repository.

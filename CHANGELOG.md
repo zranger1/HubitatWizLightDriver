@@ -1,6 +1,13 @@
 # Change Log for HubitatWizLightDriver 
 Hubitat Elevation device handler for Philips Wiz wi-fi color lights
 
+### v1.2.8
+Fix to make sure polling restarts properly after Hub reboot.
+
+### v1.2.7
+Support for the new 3 parameter setColorTemperature capability added
+in Hubitat firmware v2.2.6
+
 ### v1.2.6
 Minor code cleanup
 

@@ -32,6 +32,7 @@
  *    2021-02-02  1.2.6  Remove unused code in definition 
  *    2021-07-16  1.2.7  Support new 3 parameter setColorTemperature capability
  *    2021-07-19  1.2.8  Make sure polling restarts after Hub reboot
+ *    2021-07-23  1.2.9  Stop rssi from showing up as state change in event log
  *   
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -89,7 +90,7 @@ import groovy.transform.Field
     32:"Steampunk"
 ]
  
-def version() {"1.2.8"}
+def version() {"1.2.9"}
 def commandPort() { "38899" }
 def unknownString() { "none" }
 def statusPort()  { "38899" } 
@@ -294,7 +295,7 @@ def parseLightParams(params) {
     }  
 
     if (params.containsKey("rssi")) { 
-      sendEvent([name:"rssi", value: params.rssi])
+ //     sendEvent([name:"rssi", value: params.rssi, isStateChange: false])
     } 
     if (params.containsKey("mac")) {
       sendEvent([name:"macAddress", value: params.mac])
