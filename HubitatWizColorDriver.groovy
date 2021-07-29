@@ -294,8 +294,8 @@ def parseLightParams(params) {
       sendEvent([name: "effectSpeed", value: params.speed])
     }  
 
-    if (params.containsKey("rssi")) { 
- //     sendEvent([name:"rssi", value: params.rssi, isStateChange: false])
+    if (params.containsKey("rssi") && logEnable) { 
+      sendEvent([name:"rssi", value: params.rssi, isStateChange: false])
     } 
     if (params.containsKey("mac")) {
       sendEvent([name:"macAddress", value: params.mac])

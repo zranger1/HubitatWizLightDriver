@@ -7,8 +7,8 @@ mostly work with Wiz on/off and variable CT white bulbs as well, but I only own
 the color bulbs at this point and I haven't tested other types.
 
 ## What's New - v1.2.9
-Stop rssi from showing up as a state change in event log in
-Hubitat 2.2.8.xxx firmware.
+Stop rssi from showing up as a state change in event log unless debug
+logging is enabled.
 
 ## Previously...
 For information on previous versions, see CHANGELOG.md in this repository.
