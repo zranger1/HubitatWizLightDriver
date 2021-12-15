@@ -18,21 +18,22 @@
  *
  *    Date        Ver    What
  *    ----        ---    ----
- *    2020-1-12   0.1    Created
- *    2020-3-08   1.0    Added status requester, update to 1.0
- *    2020-3-13   1.01   Added duration to setLevel command to make RM happy
- *    2020-7-21   1.1.1  Use new Hub feature to fix unwanted logging of UDP timeouts.
- *    2020-10-26  1.1.2  Enable use of Wiz lighting effects in HE Scenes
- *    2020-12-05  1.1.3  Hubitat Package Manager support
- *    2020-12-07  1.2.1  Change dimmer behavior to allow on/off switching
- *    2020-12-09  1.2.2  Fix issue #2 - Hubitat UI requires valid RGB even in ct mode
- *    2020-12-22  1.2.3  Change on/off/level message order to improve dimmer behavior 
- *    2021-01-13  1.2.4  Add setIPAddress/macAddress to support large installations 
- *    2021-01-17  1.2.5  Performance & stability improvements
- *    2021-02-02  1.2.6  Remove unused code in definition 
- *    2021-07-16  1.2.7  Support new 3 parameter setColorTemperature capability
- *    2021-07-19  1.2.8  Make sure polling restarts after Hub reboot
- *    2021-07-23  1.2.9  Stop rssi from showing up as state change in event log
+ *    2020-1-12   0.1     Created
+ *    2020-3-08   1.0     Added status requester, update to 1.0
+ *    2020-3-13   1.01    Added duration to setLevel command to make RM happy
+ *    2020-7-21   1.1.1   Use new Hub feature to fix unwanted logging of UDP timeouts.
+ *    2020-10-26  1.1.2   Enable use of Wiz lighting effects in HE Scenes
+ *    2020-12-05  1.1.3   Hubitat Package Manager support
+ *    2020-12-07  1.2.1   Change dimmer behavior to allow on/off switching
+ *    2020-12-09  1.2.2   Fix issue #2 - Hubitat UI requires valid RGB even in ct mode
+ *    2020-12-22  1.2.3   Change on/off/level message order to improve dimmer behavior 
+ *    2021-01-13  1.2.4   Add setIPAddress/macAddress to support large installations 
+ *    2021-01-17  1.2.5   Performance & stability improvements
+ *    2021-02-02  1.2.6   Remove unused code in definition 
+ *    2021-07-16  1.2.7   Support new 3 parameter setColorTemperature capability
+ *    2021-07-19  1.2.8   Make sure polling restarts after Hub reboot
+ *    2021-07-23  1.2.9   Stop rssi from showing up as state change in event log
+ *    2021-12-06  1.2.10  Make level parameter optional in setColor
  *   
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -461,6 +462,10 @@ def updateCurrentStatus(hsv,ct,effectNo,inParse = false) {
 
 def setColor(hsv) {
     def rgb
+     
+    if(!hsv.level){
+        hsv.level = device.currentValue("level") ?: 100; //if the level wasn't included, try to get the current level or fallback to 100
+    }
     
     logDebug("setColor(${hsv})")   
     try {
